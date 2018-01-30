@@ -1,0 +1,99 @@
+buildscript {
+    repositories {
+        jcenter()
+        maven { url = "http://files.minecraftforge.net/maven" }
+    }
+    dependencies {
+        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
+    }
+}
+apply plugin: 'net.minecraftforge.gradle.forge'
+
+file "build.properties" withReader {
+    def prop = new Properties()
+    prop.load(it)
+    ext.config = new ConfigSlurper().parse prop
+}
+
+version = "${config.mod.version}"
+group = 'org.quantx.advancedrocketrydriver'
+archivesBaseName = "advancedrocketrydriver"
+
+sourceCompatibility = targetCompatibility = "1.8" // Need this here so eclipse task generates correctly.
+compileJava {
+    sourceCompatibility = targetCompatibility = "1.8"
+}
+
+minecraft {
+    version = "${config.minecraft.version}-${config.forge.version}"
+    runDir = "run"
+
+    mappings = "snapshot_20171003"
+}
+
+repositories {
+    maven { // JEI
+        name "Progwml Repo"
+        url "http://dvs1.progwml6.com/files/maven"
+    }
+
+    maven { // OpenComputers
+        name = "oc"
+        url = "http://maven.cil.li/"
+    }
+
+    ivy {
+        // Used by AdvancedRocketry
+        name "LibVulpes"
+        artifactPattern "http://65.78.115.159:8080/job/LibVulpes/job/libVulpes/job/1.12/${config.libvulpes.build}/artifact/output/[module]-1.12.2-[revision]-${config.libvulpes.build}-deobf.[ext]"
+    }
+
+    ivy { // Advanced Rocketry
+        name 'AdvancedRocketry'
+        artifactPattern "http://65.78.115.159:8080/job/Advanced%20Rocketry/job/AdvancedRocketry/job/1.12/${config.ar.build}/artifact/build/libs/[module]-1.12.2-[revision]-${config.ar.build}.[ext]"
+    }
+}
+
+dependencies {
+    // Get JEI
+    deobfCompile "mezz.jei:jei_${config.minecraft.version}:${config.jei.version}:api"
+    runtime "mezz.jei:jei_${config.minecraft.version}:${config.jei.version}"
+    // Get OpenComputers
+    compile "li.cil.oc:OpenComputers:MC1.12.1-${config.oc.version}:api"
+    // Get LibVulpes
+    provided name: 'LibVulpes', version: config.libvulpes.version, ext: 'jar'
+    // Get Advanced Rocketry
+    provided name: 'AdvancedRocketry', version: config.ar.version, ext: 'jar'
+}
+
+allprojects {
+    if (System.getenv("TRAVIS") != null) {
+        def tag = System.getenv("TRAVIS_TAG");
+        if (tag != null && !tag.isEmpty() && tag.contains("release")) {
+            project.ext.releaseType = "release"
+        } else {
+            version += "-b${System.getenv("TRAVIS_BUILD_NUMBER")}"
+            project.ext.releaseType = "beta"
+        }
+    }
+}
+
+processResources
+{
+    // this will ensure that this task is redone when the versions change.
+    inputs.property "version", project.version
+    inputs.property "mcversion", project.minecraft.version
+
+    // replace stuff in mcmod.info, nothing else
+    from(sourceSets.main.resources.srcDirs) {
+        include 'mcmod.info'
+
+        // replace version and mcversion
+        expand 'version':project.version, 'mcversion':project.minecraft.version
+    }
+
+    // copy everything else, thats not the mcmod.info
+    from(sourceSets.main.resources.srcDirs) {
+        exclude 'mcmod.info'
+    }
+}

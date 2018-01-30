@@ -1,0 +1,16 @@
+[
+{
+  "modid": "advancedrocketrydriver",
+  "name": "OpenComputers Advanced Rocketry Driver",
+  "description": "Communicate between OpenComputers and Advanced Rocketry",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["Quantx"],
+  "credits": "",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]
